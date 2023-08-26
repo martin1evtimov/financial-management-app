@@ -23,7 +23,9 @@ export default function Dashboard({ navigation }) {
     });
   };
 
-  const handleAddExpense = () => {
+  const handleAddExpense = (categoryName, category) => {
+    console.log('categoryName: ' + categoryName);
+    console.log('category: ' + category);
     Alert.prompt('Add Expense', 'Enter the amount:', (amount) => {
       if (amount && !isNaN(amount)) {
         const newExpense = parseFloat(amount);
@@ -32,6 +34,21 @@ export default function Dashboard({ navigation }) {
         setTransaction((prevTransaction) => prevTransaction + 1)
       }
     });
+  };
+
+  const handleCategoryPrompt = () => {
+    Alert.alert(
+        'Choose Category',
+        'Choose an option from the list:',
+        [
+            { text: 'Groceries', onPress: () => handleAddExpense('Groceries', 0) },
+            { text: 'Travel', onPress: () => handleAddExpense('Travel', 1) },
+            { text: 'Transportation', onPress: () => handleAddExpense('Transportation', 2) },
+            { text: 'Restaurants and bars', onPress: () => handleAddExpense('Restaurants and bars', 3) },
+            // Can add more options?
+            { text: 'Cancel', style: 'cancel' },
+        ],
+    );
   };
 
   return (
@@ -43,7 +60,7 @@ export default function Dashboard({ navigation }) {
 
         <View style={styles.incomeExpensesButtons}>
           <Button mode="contained" onPress={handleAddIncome}>Add income</Button>
-          <Button mode="contained" onPress={handleAddExpense}>Add expense</Button>
+          <Button mode="contained" onPress={handleCategoryPrompt}>Add expense</Button>
         </View>
 
         <View style={styles.componentContainerBalance}>
