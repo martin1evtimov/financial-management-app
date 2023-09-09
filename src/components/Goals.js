@@ -1,10 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, Alert, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import ProgressBar from 'react-native-progress/Bar';
 import { theme } from '../core/theme';
+import * as SQLite from 'expo-sqlite';
+
+const db = SQLite.openDatabase('test7.db');
+
 
 export default function Goals(props) {
+    const userId = 'martin3@gmail.com'; //TO DO REMOVE THIS! THIS IS TEMP!
+    const [components, setComponents] = useState([]);
+
+    //use the useEffect hook to load budget data once when the component is mounted
+    useEffect(() => {
+        //Getting budget if there are any for this a user
+        db.transaction(tx => {
+            tx.executeSql('SELECT * FROM goals where user_email = ?;', [userId], (_, { rows }) => {
+              // Store the query result in state
+              rows._array.map((goal) =>  {
+                console.log(JSON.stringify(goal))
+                handleAddComponent(goal.id, goal.goal_name, goal.saved_amount, goal.target_amount)
+              });
+            });
+          });
+    }, []);
 
     const handleGoalTitlePrompt = () => {
         Alert.prompt(
@@ -32,29 +52,45 @@ export default function Goals(props) {
     };
     
     const handleData = (goalTitle, amount) => {
-        handleAddComponent(goalTitle, amount);
-        console.log('Amount:', amount);
-    };
+        const currentBalance = 0; //if we are here it means that it's a new added goal. Initialize currentBalance for the new component
 
-    const [components, setComponents] = useState([]);
-
-    const handleAddComponent = (goalTitle, amount) => {
         // Generate a unique key for the new component
         const newComponentKey = new Date().getTime().toString();
+        
+        handleAddComponent(newComponentKey, goalTitle, amount, currentBalance);
 
+        db.transaction((tx) => {
+            tx.executeSql(
+            'insert into goals (id, user_email, goal_name, saved_amount, target_amount) values (?, ?, ?, ?, ?)',
+            [newComponentKey, userId, goalTitle, currentBalance, amount],
+            (_, { rowsAffected }) => {
+                if (rowsAffected > 0) {
+                console.log(`Goal for user - ${userId} successfully inserted`);
+                } else {
+                console.log(`Goal for user - ${userId} was not successfully inserted`);
+                }
+            },
+            (error) => {
+                console.error('Error updating Goal:', error);
+            }
+            );
+        });
+    };
+
+    const handleAddComponent = (newComponentKey, goalTitle, amount, saved_amount) => {
         // Create a new component object with its own state
         const newGoalComponent = {
             key: newComponentKey,
             title: goalTitle,
             goal: amount,
-            currentBalance: 0, // Initialize currentBalance for the new component
+            currentBalance: saved_amount, // Initialize currentBalance for the new component
         };
 
         // Update the state to include the new component
         setComponents(prevComponents => [...prevComponents, newGoalComponent]);
     };
 
-    const updateComponentBalance = (componentKey, amount) => {
+    const updateComponentBalance = (componentKey) => {
         Alert.prompt(
             'Enter Amount',
             'Enter the amount:',
@@ -63,9 +99,28 @@ export default function Goals(props) {
                 setComponents((prevComponents) =>
                 prevComponents.map((component) => {
                   if (component.key === componentKey) {
+                    let updateBalance = component.currentBalance + parseFloat(amount);
+
+                    db.transaction((tx) => {
+                        tx.executeSql(
+                            'update goals set saved_amount = ? where id = ?',
+                            [updateBalance, component.key],
+                            (_, { rowsAffected }) => {
+                                if (rowsAffected > 0) {
+                                console.log(`Goal for user - ${userId} successfully updated`);
+                                } else {
+                                console.log(`Goal for user - ${userId} was not successfully updated`);
+                                }
+                            },
+                            (error) => {
+                                console.error('Error updating goal:', error);
+                            }
+                        );
+                    });
+
                     return {
                       ...component,
-                      currentBalance: component.currentBalance + parseFloat(amount),
+                      currentBalance: updateBalance,
                     };
                   }
                   return component;

@@ -1,16 +1,108 @@
-import React, { useState } from 'react'
-import { StyleSheet, View, Text, Alert, TouchableOpacity } from 'react-native'
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, Text, Alert, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Background from '../components/Background'
-import Button from '../components/Button'
-import BottomMenu from '../components/BottomMenu'
+import Background from '../components/Background';
+import Button from '../components/Button';
+import BottomMenu from '../components/BottomMenu';
+import * as SQLite from 'expo-sqlite';
 
+const db = SQLite.openDatabase('test7.db');
 
-export default function Dashboard({ navigation }) {
-  const [balance, setBalance] = useState(5000);
-  const [income, setIncome] = useState(10000);
-  const [expense, setExpense] = useState(5000);
+export default function Dashboard({ route, navigation }) {
+  const user = route.params;
+
+  const [balance, setBalance] = useState(user.balance);
+  const [income, setIncome] = useState(user.income);
+  const [expense, setExpense] = useState(user.expenses);
   const [transaction, setTransaction] = useState(0);
+  const [goals, setGoals] = useState(0);
+  const [budget, setBudget] = useState(0);
+
+  //use the useEffect hook to load these data once when the component is mounted
+  useEffect(() => {
+    //Getting transcations if there are any for this a user
+    db.transaction(tx => {
+      tx.executeSql('SELECT * FROM transactions where user_email = ?;', [user.email], (_, { rows }) => {
+        // Store the query result in state
+        setTransaction(rows.length)
+      });
+    });
+  
+    //Getting goals if there are any for this a user
+    db.transaction(tx => {
+      tx.executeSql('SELECT * FROM goals where user_email = ?;', [user.email], (_, { rows }) => {
+        // Store the query result in state
+        setGoals(rows.length);
+      });
+    });
+  
+    //Getting budgets if there are any for this a user
+    db.transaction(tx => {
+      tx.executeSql('SELECT * FROM budgets where user_email = ?;', [user.email], (_, { rows }) => {
+        // Store the query result in state
+        setBudget(rows.length);
+      });
+    });
+  }, []); 
+
+  const updateUserIncome = (userId, income, balance) => {
+    db.transaction((tx) => {
+      tx.executeSql(
+        'UPDATE users SET income = ?, balance = ? WHERE email = ?',
+        [income, balance, userId],
+        (_, { rowsAffected }) => {
+          if (rowsAffected > 0) {
+            console.log(`User with email ${userId} updated successfully income`);
+          } else {
+            console.log(`No user found with email ${userId}`);
+          }
+        },
+        (error) => {
+          console.error('Error updating user:', error);
+        }
+      );
+    });
+  };
+  
+  const updateUserExpense = (userId, expense, balance) => {
+    db.transaction((tx) => {
+      tx.executeSql(
+        'UPDATE users SET expenses = ?, balance = ? WHERE email = ?',
+        [expense, balance, userId],
+        (_, { rowsAffected }) => {
+          if (rowsAffected > 0) {
+            console.log(`User with email ${userId} updated successfully expenses`);
+          } else {
+            console.log(`No user found with email ${userId}`);
+          }
+        },
+        (error) => {
+          console.error('Error updating user:', error);
+        }
+      );
+    });
+  };
+  
+  const insertTransaction = (userId, transaction_name, categoryName, category, amount) => {
+    const date = new Date();
+    const isoDate = date.toISOString();
+    db.transaction((tx) => {
+      tx.executeSql(
+        'insert into transactions (user_email, transaction_name, category_name, date, category, amount) values (?, ?, ?, ?, ?, ?)',
+        [userId, transaction_name, categoryName, isoDate, category, amount],
+        (_, { rowsAffected }) => {
+          if (rowsAffected > 0) {
+            console.log(`Transaction for user - ${userId} successfully inserted`);
+          } else {
+            console.log(`Transaction for user - ${userId} was not successfully inserted`);
+          }
+        },
+        (error) => {
+          console.error('Error updating transaction:', error);
+        }
+      );
+    });
+  };
 
   const handleAddIncome = () => {
     Alert.prompt('Add Income', 'Enter the amount:', (amount) => {
@@ -18,22 +110,41 @@ export default function Dashboard({ navigation }) {
         const newIncome = parseFloat(amount);
         setIncome((prevIncome) => prevIncome + newIncome);
         setBalance((prevBalance) => prevBalance + newIncome);
-        setTransaction((prevTransaction) => prevTransaction + 1)
       }
     });
   };
 
-  const handleAddExpense = (categoryName, category) => {
-    console.log('categoryName: ' + categoryName);
-    console.log('category: ' + category);
+  useEffect(() => {
+    // This code will execute when income or balance changes
+    updateUserIncome(user.email, income, balance);
+  }, [income]);
+
+  useEffect(() => {
+    // This code will execute when income or balance changes
+    updateUserExpense(user.email, expense, balance);
+  }, [expense]);
+
+  const handleAddExpense = (transaction_name, categoryName, category) => {
     Alert.prompt('Add Expense', 'Enter the amount:', (amount) => {
       if (amount && !isNaN(amount)) {
         const newExpense = parseFloat(amount);
         setExpense((prevExpense) => prevExpense + newExpense);
         setBalance((prevBalance) => prevBalance - newExpense);
-        setTransaction((prevTransaction) => prevTransaction + 1)
+        setTransaction((prevTransaction) => prevTransaction + 1);
+        insertTransaction(user.email, transaction_name, categoryName, category, amount); // Doesn't need this in userEffect since we only keep track of the transcation without showing it
       }
     });
+  };
+
+  const handleTransacationName =(categoryName, category) => {
+    Alert.prompt(
+      'Name of the transaction?',
+      'Enter name',
+      (transactionName) => {
+        if(transactionName) {
+          handleAddExpense(transactionName, categoryName, category);
+        }
+      });
   };
 
   const handleCategoryPrompt = () => {
@@ -41,10 +152,10 @@ export default function Dashboard({ navigation }) {
         'Choose Category',
         'Choose an option from the list:',
         [
-            { text: 'Groceries', onPress: () => handleAddExpense('Groceries', 0) },
-            { text: 'Travel', onPress: () => handleAddExpense('Travel', 1) },
-            { text: 'Transportation', onPress: () => handleAddExpense('Transportation', 2) },
-            { text: 'Restaurants and bars', onPress: () => handleAddExpense('Restaurants and bars', 3) },
+            { text: 'Groceries', onPress: () => handleTransacationName('Groceries', 0) },
+            { text: 'Travel', onPress: () => handleTransacationName('Travel', 1) },
+            { text: 'Transportation', onPress: () => handleTransacationName('Transportation', 2) },
+            { text: 'Restaurants and bars', onPress: () => handleTransacationName('Restaurants and bars', 3) },
             // Can add more options?
             { text: 'Cancel', style: 'cancel' },
         ],
@@ -55,7 +166,7 @@ export default function Dashboard({ navigation }) {
     <Background>
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.greetingText}>Hello, Martin</Text>
+          <Text style={styles.greetingText}>Hello, {user.name}</Text>
         </View>
 
         <View style={styles.incomeExpensesButtons}>
@@ -81,17 +192,17 @@ export default function Dashboard({ navigation }) {
           <View style={styles.menuContainer}>
             <View style={styles.menuItemContainer}>
               <MenuItem iconName="ios-flag" text="Goals" />
-              <Text>6</Text>
+              <Text>{goals}</Text>
             </View>
 
             <View style={styles.menuItemContainer}>
               <MenuItem iconName="cash-outline" text="Budget" />
-              <Text>4</Text>
+              <Text>{budget}</Text>
             </View>
 
             <View style={styles.menuItemContainer}>
               <MenuItem iconName="logo-usd" text="Money Saved" />
-              <Text>35%</Text>
+              <Text>{(Math.floor((balance / income) * 100) || 0)}%</Text>
             </View>
 
             <View style={styles.menuItemContainer}>

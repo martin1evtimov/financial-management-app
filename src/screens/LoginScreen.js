@@ -1,39 +1,76 @@
-import React, { useState } from 'react'
-import { TouchableOpacity, StyleSheet, View } from 'react-native'
-import { Text } from 'react-native-paper'
-import Background from '../components/Background'
-import Logo from '../components/Logo'
-import Header from '../components/Header'
-import Button from '../components/Button'
-import TextInput from '../components/TextInput'
-import BackButton from '../components/BackButton'
-import { theme } from '../core/theme'
-import { emailValidator } from '../helpers/emailValidator'
-import { passwordValidator } from '../helpers/passwordValidator'
+import React, { useState } from 'react';
+import { TouchableOpacity, StyleSheet, View } from 'react-native';
+import { Text } from 'react-native-paper';
+import Background from '../components/Background';
+import Logo from '../components/Logo';
+import Header from '../components/Header';
+import Button from '../components/Button';
+import TextInput from '../components/TextInput';
+import BackButton from '../components/BackButton';
+import { theme } from '../core/theme';
+import { emailValidator } from '../helpers/emailValidator';
+import { passwordValidator } from '../helpers/passwordValidator';
+import * as SQLite from 'expo-sqlite';
+
+const db = SQLite.openDatabase('test7.db');
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState({ value: '', error: '' })
   const [password, setPassword] = useState({ value: '', error: '' })
+  const [userFound, setUserFound] = useState(true); // State variable to track if the user is found
 
   const onLoginPressed = () => {
+    setUserFound(true)
     const emailError = emailValidator(email.value)
     const passwordError = passwordValidator(password.value)
+    //const accountError = 
     if (emailError || passwordError) {
       setEmail({ ...email, error: emailError })
       setPassword({ ...password, error: passwordError })
       return
     }
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'Dashboard' }],
-    })
+    
+    db.transaction((tx) => {
+      tx.executeSql(
+        'SELECT * FROM users WHERE email = ?',
+        [email.value],
+        (_, { rows }) => {
+          if (rows.length > 0) {
+            const user = rows.item(0);
+            console.log('User found:', user);
+            
+            if (user.password === password.value) {
+              navigation.reset({
+                index: 0,
+                routes: [{ 
+                  name: 'Dashboard',
+                  params: user 
+                }],
+              })
+            } else {
+              setUserFound(false);
+              console.log('Password does not match');
+            }
+
+          } else {
+            setUserFound(false);
+            console.log('User not found');  
+          }
+        },
+        (error) => {
+          console.error('Error executing SQL:', error);
+        }
+      );
+    });
   }
 
   return (
     <Background>
       <BackButton goBack={navigation.goBack} />
       <Logo />
-      <Header>Welcome back.</Header>
+      {userFound ?  null : (
+        <Text style={{color: 'red'}}>User not found. Please check your credentials.</Text>
+      )}
       <TextInput
         label="Email"
         returnKeyType="next"

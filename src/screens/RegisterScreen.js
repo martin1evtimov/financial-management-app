@@ -1,16 +1,19 @@
-import React, { useState } from 'react'
-import { View, StyleSheet, TouchableOpacity } from 'react-native'
-import { Text } from 'react-native-paper'
-import Background from '../components/Background'
-import Logo from '../components/Logo'
-import Header from '../components/Header'
-import Button from '../components/Button'
-import TextInput from '../components/TextInput'
-import BackButton from '../components/BackButton'
-import { theme } from '../core/theme'
-import { emailValidator } from '../helpers/emailValidator'
-import { passwordValidator } from '../helpers/passwordValidator'
-import { nameValidator } from '../helpers/nameValidator'
+import React, { useState } from 'react';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { Text } from 'react-native-paper';
+import Background from '../components/Background';
+import Logo from '../components/Logo';
+import Header from '../components/Header';
+import Button from '../components/Button';
+import TextInput from '../components/TextInput';
+import BackButton from '../components/BackButton';
+import { theme } from '../core/theme';
+import { emailValidator } from '../helpers/emailValidator';
+import { passwordValidator } from '../helpers/passwordValidator';
+import { nameValidator } from '../helpers/nameValidator';
+import * as SQLite from 'expo-sqlite';
+
+const db = SQLite.openDatabase('test7.db');
 
 export default function RegisterScreen({ navigation }) {
   const [name, setName] = useState({ value: '', error: '' })
@@ -27,10 +30,54 @@ export default function RegisterScreen({ navigation }) {
       setPassword({ ...password, error: passwordError })
       return
     }
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'Dashboard' }],
-    })
+
+    const insertUser = (db) => {
+      const user = {
+        email: email.value,
+        balance: 0,
+        income: 0,
+        expenses: 0,
+        password: password.value,
+        name: name.value,
+      };
+
+      const date = new Date();
+      const isoDate = date.toISOString();
+    
+      db.transaction(tx => {
+        tx.executeSql(
+          'INSERT INTO users (email, balance, income, expenses, password, name, date) ' +
+          'VALUES (?, ?, ?, ?, ?, ?, ?);',
+          [
+            user.email,
+            user.balance,
+            user.income,
+            user.expenses,
+            user.password,
+            user.name,
+            isoDate
+          ],
+          (tx, results) => {
+            if (results.rowsAffected > 0) {
+              console.log('User inserted successfully');
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'LoginScreen' }],
+              })
+            } else {
+              console.log('Failed to insert user');
+            }
+          },
+          (error) => {
+            console.error('Error inserting user:', error);
+          }
+        );
+      });
+    };
+
+    insertUser(db);
+
+    
   }
 
   return (

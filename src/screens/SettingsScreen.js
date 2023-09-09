@@ -1,21 +1,51 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { StyleSheet, View, Text, TextInput, Image, TouchableOpacity, Button } from 'react-native'
 import { launchImageLibrary } from 'react-native-image-picker';
 import Background from '../components/Background';
 import BottomMenu from '../components/BottomMenu';
 import SeparatorLine from '../components/Separator'; //This is extracted as component because a View can't be empty and will throw an error
 import * as ImagePicker from 'expo-image-picker';
+import { theme } from '../core/theme';
+import * as SQLite from 'expo-sqlite';
+
+const db = SQLite.openDatabase('test7.db');
 
 export default function StatisticsScreen({ navigation }) {
-    const [name, setName] = useState('Martin');
-    const [email, setEmail] = useState('martinevtimov93@gmail.com');
-    const [imageSource, setImageSource] = useState(
-        require('../assets/default-profile-picture.jpg')
-    );
-    const [currentPassword, setCurrentPassword] = useState('test');
+    const userId = 'martin3@gmail.com'; //TO DO REMOVE THIS! THIS IS TEMP!
+    const [user, setUser] = useState(null);
+    const [name, setName] = useState('');
+    const [imageSource, setImageSource] = useState();
+    const [memberDate, setMemberDate] = useState('');
+    const [hiddenCurrentPassword, setHiddenPassword] = useState('');
+    const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmNewPassword, setConfirmNewPassword] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
+
+    //use the useEffect hook to load user data once when the component is mounted
+    useEffect(() => {
+      db.transaction((tx) => {
+        tx.executeSql(
+          'SELECT * FROM users WHERE email = ?',
+          [userId],
+          (_, { rows }) => {
+            if (rows.length > 0) {
+              const user = rows.item(0);
+              setUser(user);
+              setName(user.name);
+              setMemberDate(user.date.substring(0, 4));
+              setHiddenPassword(user.password);
+              setImageSource(user.image === null ? require('../assets/default-profile-picture.jpg') : {uri: user.image});
+              console.log('User found:', user);
+    
+            } else {
+              setUserFound(false);
+              console.log('User not found');  
+            }
+          },
+        );
+      });
+    }, []);
 
     const handlePasswordChange = () => {
       // Perform password change logic here
@@ -23,6 +53,28 @@ export default function StatisticsScreen({ navigation }) {
         setErrorMessage("New passwords don't match.");
         return;
       }
+
+      if (hiddenCurrentPassword !== currentPassword) {
+        setErrorMessage("Current password is not correct.");
+        return;
+      }
+
+      db.transaction((tx) => {
+        tx.executeSql(
+          'UPDATE users SET password = ? WHERE email = ?',
+          [newPassword, userId],
+          (_, { rowsAffected }) => {
+            if (rowsAffected > 0) {
+              console.log(`User with email ${userId} updated successfully`);
+            } else {
+              console.log(`No user found with email ${userId}`);
+            }
+          },
+          (error) => {
+            console.error('Error updating user:', error);
+          }
+        );
+      });
   
       // Call API or perform password change action
       // You can add your own implementation here
@@ -35,7 +87,23 @@ export default function StatisticsScreen({ navigation }) {
     };
 
     const handlePersonalChange = () => {
-      alert('change');
+      console.log(imageSource)
+      db.transaction((tx) => {
+        tx.executeSql(
+          'UPDATE users SET name = ?, image = ? WHERE email = ?',
+          [name, imageSource.uri, userId],
+          (_, { rowsAffected }) => {
+            if (rowsAffected > 0) {
+              console.log(`User with email ${userId} updated successfully`);
+            } else {
+              console.log(`No user found with email ${userId}`);
+            }
+          },
+          (error) => {
+            console.error('Error updating user:', error);
+          }
+        );
+      });
     }
 
     const pickImage = async () => {
@@ -62,18 +130,12 @@ export default function StatisticsScreen({ navigation }) {
           </TouchableOpacity>  
         </Text>
         <Text style={styles.date}>
-            Member since 2021
+            Member since {memberDate}
         </Text>
         <TextInput
         style={styles.input}
         value={name}
         onChangeText={(text) => setName(text)}
-        />
-        <TextInput
-        style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={(text) => setEmail(text)}
         />
         <TouchableOpacity style={styles.button} onPress={handlePersonalChange}>
           <Text style={styles.buttonText}>Change Personal Info</Text>
@@ -156,7 +218,7 @@ const styles = StyleSheet.create({
       marginBottom: 10,
     },
     button: {
-      backgroundColor: 'blue',
+      backgroundColor: theme.colors.primary,
       paddingVertical: 12,
       paddingHorizontal: 40,
       borderRadius: 5,

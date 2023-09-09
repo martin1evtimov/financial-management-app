@@ -41,7 +41,7 @@ export default function Overview(props) {
     return (
       <View style={{ flex: 0.8, width: '100%', flexDirection: 'column'}}>
         <View>
-          <Text style={{fontSize: '18'}}>Weekly Spending</Text>
+          <Text style={{fontSize: 18}}>Weekly Spending</Text>
           <BarChart
                 width={Dimensions.get('window').width/1.5}
                 barWidth={20}
@@ -55,7 +55,7 @@ export default function Overview(props) {
         </View>
 
         <View style={{marginTop: '10%'}}>
-          <Text style={{fontSize: '18', marginBottom: '5%'}}>Monthly Spending</Text>
+          <Text style={{fontSize: 18, marginBottom: '5%'}}>Monthly Spending</Text>
           <BarChart 
                 width={Dimensions.get('window').width/2}
                 rotateLabel

@@ -1,7 +1,9 @@
-import React from 'react';
-import { StyleSheet, View, Text } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, Text, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as SQLite from 'expo-sqlite';
 
+const db = SQLite.openDatabase('test7.db');
 
 export default function Transactions(props) {
     const iconArray = [
@@ -20,22 +22,86 @@ export default function Transactions(props) {
         // Add more icons?
     ];
 
-    return (
-        <View style={{flex: 0.8, width: '100%'}}>
-            <View style={{flexDirection: 'row',}}>
-                {iconArray[0]}
+    const [transactions, setTransactions] = useState([]);
 
-                <View style={{flexDirection: 'row', justifyContent: 'space-around', width: '100%'}}>
-                    <View>
-                        <Text>Train</Text>
-                        <Text>Transporation</Text>
-                    </View>
-                    <View>
-                        <Text>- $20</Text>
-                        <Text>01.09.2023</Text>
-                    </View>
+    //use the useEffect hook to load transaction data once when the component is mounted
+    useEffect(() => {
+            //Getting transcations if there are any for this a user
+            db.transaction(tx => {
+                tx.executeSql('SELECT * FROM transactions where user_email = ?;', ['martin3@gmail.com'], (_, { rows }) => {
+                    // Store the query result in state
+                    console.log(rows);
+                    setTransactions(rows._array)
+                });
+            });
+    }, []);
+
+    // Sort transactions by date in descending order
+    const sortedTransactions = transactions.slice().sort((a, b) => {
+        // Convert date strings to Date objects for comparison
+        const dateA = new Date(a.date);
+        const dateB = new Date(b.date);
+    
+        // Sort in descending order
+        return dateB - dateA;
+    });
+
+    return (
+        <ScrollView style={{ flex: 0.8, width: '100%' }}>
+          {sortedTransactions.map((transaction, index) => (
+            <View key={index} style={styles.transactionContainer}>
+              <View style={{ marginRight: 10 }}>{iconArray[transaction.category]}</View> 
+      
+              <View style={styles.transactionDetails}>
+                <View style={styles.transactionTextContainer}>
+                  <Text style={styles.transactionName}>{transaction.transaction_name}</Text>
+                  <Text style={styles.categoryName}>{transaction.category_name}</Text>
                 </View>
+                <View style={styles.amountAndDate}>
+                  <Text style={styles.amount}>- ${transaction.amount}</Text>
+                  <Text style={styles.date}>{transaction.date.substring(0, 10)}</Text>
+                </View>
+              </View>
             </View>
-        </View>
-    )
+          ))}
+        </ScrollView>
+    );      
 }
+
+const styles = StyleSheet.create({
+    transactionContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 10,
+    },
+    transactionDetails: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      width: '80%',
+      marginTop: 10,
+    },
+    transactionTextContainer: {
+      flex: 1,
+    },
+    transactionName: {
+      fontSize: 16,
+      fontWeight: 'bold',
+    },
+    categoryName: {
+      fontSize: 14,
+      color: 'gray',
+    },
+    amountAndDate: {
+      alignItems: 'flex-end',
+    },
+    amount: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: 'red', // Adjust the color as needed
+    },
+    date: {
+      fontSize: 14,
+      color: 'gray', // Adjust the color as needed
+    },
+  });

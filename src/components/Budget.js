@@ -1,18 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, Alert, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import ProgressBar from 'react-native-progress/Bar';
 import { theme } from '../core/theme';
+import * as SQLite from 'expo-sqlite';
+
+const db = SQLite.openDatabase('test7.db');
 
 
 export default function Budget(props) {
+    const userId = 'martin3@gmail.com'; //TO DO REMOVE THIS! THIS IS TEMP!
+    const [components, setComponents] = useState([]);
+
+
     const iconArray = [
-        <Ionicons name="cart" size={30} color="black" />,
-        <Ionicons name="airplane" size={30} color="black" />,
-        <Ionicons name="car" size={30} color="black" />,
-        <Ionicons name="restaurant" size={30} color="black" />,
+        <View style={{backgroundColor: '#FCE5CD', borderRadius: 100, width: 45, height: 45, justifyContent: 'center', alignItems: 'center'}}>
+            <Ionicons name="cart" size={30} color="black" />
+        </View>,
+        <View style={{backgroundColor: '#BBE279', borderRadius: 100, width: 45, height: 45, justifyContent: 'center', alignItems: 'center'}}>
+            <Ionicons name="airplane" size={30} color="black" />
+        </View>,
+        <View style={{backgroundColor: '#8DD3C7', borderRadius: 100, width: 45, height: 45, justifyContent: 'center', alignItems: 'center'}}>
+            <Ionicons name="car" size={30} color="black" />
+        </View>,
+        <View style={{backgroundColor: '#FDB462', borderRadius: 100, width: 45, height: 45, justifyContent: 'center', alignItems: 'center'}}>
+            <Ionicons name="restaurant" size={30} color="black" />
+        </View>,
         // Add more icons?
-      ];
+    ];   
+
+    //use the useEffect hook to load budget data once when the component is mounted
+    useEffect(() => {
+        //Getting budget if there are any for this a user
+        db.transaction(tx => {
+            tx.executeSql('SELECT * FROM budgets where user_email = ?;', [userId], (_, { rows }) => {
+              // Store the query result in state
+              rows._array.map((budget) =>  {
+                console.log(JSON.stringify(budget))
+                handleAddComponent(budget.id, budget.category_name, budget.category, budget.budget_amount, budget.saved_amount)
+              });
+            });
+          });
+    }, []);
 
     const handleCategoryPrompt = () => {
         Alert.alert(
@@ -42,32 +71,47 @@ export default function Budget(props) {
         );
     };
     
-    const handleData = (categoryName, amount, category) => {
-        handleAddComponent(categoryName, amount, category);
-        console.log('Amount:', amount);
-        console.log('Category', category);
-    };
+    const handleData = (categoryName, category, amount) => {
+        const currentBalance = 0; //if we are here it means that it's a new added budget. Initialize currentBalance for the new component
 
-    const [components, setComponents] = useState([]);
-
-    const handleAddComponent = (categoryName, category, amount) => {
         // Generate a unique key for the new component
         const newComponentKey = new Date().getTime().toString();
 
+        handleAddComponent(newComponentKey, categoryName, category, amount, currentBalance);
+
+        db.transaction((tx) => {
+            tx.executeSql(
+            'insert into budgets (id, user_email, category_name, category, saved_amount, budget_amount) values (?, ?, ?, ?, ?, ?)',
+            [newComponentKey, userId, categoryName, category, currentBalance, amount],
+            (_, { rowsAffected }) => {
+                if (rowsAffected > 0) {
+                console.log(`Budget for user - ${userId} successfully inserted`);
+                } else {
+                console.log(`Budget for user - ${userId} was not successfully inserted`);
+                }
+            },
+            (error) => {
+                console.error('Error updating budget:', error);
+            }
+            );
+        });
+    };
+
+    const handleAddComponent = (newComponentKey, categoryName, category, amount, balance) => {
         // Create a new component object with its own state
         const newBudgetComponent = {
             key: newComponentKey,
             categoryName: categoryName,
             category: category,
             goal: amount,
-            currentBalance: 0, // Initialize currentBalance for the new component
+            currentBalance: balance, 
         };
 
         // Update the state to include the new component
         setComponents(prevComponents => [...prevComponents, newBudgetComponent]);
     };
 
-    const updateComponentBalance = (componentKey, amount) => {
+    const updateComponentBalance = (componentKey) => {
         Alert.prompt(
             'Enter Amount',
             'Enter the amount:',
@@ -76,11 +120,31 @@ export default function Budget(props) {
                 setComponents((prevComponents) =>
                 prevComponents.map((component) => {
                   if (component.key === componentKey) {
+                    let updatedBalance = component.currentBalance + parseFloat(amount);
+
+                    db.transaction((tx) => {
+                        tx.executeSql(
+                            'update budgets set saved_amount = ? where id = ?',
+                            [updatedBalance, component.key],
+                            (_, { rowsAffected }) => {
+                                if (rowsAffected > 0) {
+                                console.log(`Budget for user - ${userId} successfully updated`);
+                                } else {
+                                console.log(`Budget for user - ${userId} was not successfully updated`);
+                                }
+                            },
+                            (error) => {
+                                    console.error('Error updating budget:', error);
+                            }
+                        );
+                    });
+
                     return {
                       ...component,
-                      currentBalance: component.currentBalance + parseFloat(amount),
+                      currentBalance: updatedBalance,
                     };
                   }
+
                   return component;
                 })
               );
@@ -109,7 +173,9 @@ export default function Budget(props) {
                     >
                         <View style={styles.dynamicComponent}>
                             <View style={{ flexDirection: 'row' }}>
-                                {iconArray[component.category]}
+                                <View style={{marginRight: 5}}>
+                                    {iconArray[component.category]}
+                                </View>
                                 <View>
                                     <Text>{component.categoryName}</Text>
                                     <ProgressBar progress={component.currentBalance / component.goal} size={20} />
