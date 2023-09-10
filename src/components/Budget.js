@@ -9,7 +9,7 @@ const db = SQLite.openDatabase('test7.db');
 
 
 export default function Budget(props) {
-    const userId = 'martin3@gmail.com'; //TO DO REMOVE THIS! THIS IS TEMP!
+    const userId = 'martin@gmail.com'; //TO DO REMOVE THIS! THIS IS TEMP!
     const [components, setComponents] = useState([]);
 
 

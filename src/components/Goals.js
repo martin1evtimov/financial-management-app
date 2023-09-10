@@ -9,7 +9,7 @@ const db = SQLite.openDatabase('test7.db');
 
 
 export default function Goals(props) {
-    const userId = 'martin3@gmail.com'; //TO DO REMOVE THIS! THIS IS TEMP!
+    const userId = 'martin@gmail.com'; //TO DO REMOVE THIS! THIS IS TEMP!
     const [components, setComponents] = useState([]);
 
     //use the useEffect hook to load budget data once when the component is mounted
@@ -20,7 +20,7 @@ export default function Goals(props) {
               // Store the query result in state
               rows._array.map((goal) =>  {
                 console.log(JSON.stringify(goal))
-                handleAddComponent(goal.id, goal.goal_name, goal.saved_amount, goal.target_amount)
+                handleAddComponent(goal.id, goal.goal_name, goal.target_amount, goal.saved_amount)
               });
             });
           });

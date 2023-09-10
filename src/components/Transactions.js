@@ -28,7 +28,7 @@ export default function Transactions(props) {
     useEffect(() => {
             //Getting transcations if there are any for this a user
             db.transaction(tx => {
-                tx.executeSql('SELECT * FROM transactions where user_email = ?;', ['martin3@gmail.com'], (_, { rows }) => {
+                tx.executeSql('SELECT * FROM transactions where user_email = ?;', ['martin@gmail.com'], (_, { rows }) => {
                     // Store the query result in state
                     console.log(rows);
                     setTransactions(rows._array)

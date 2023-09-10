@@ -11,7 +11,7 @@ import * as SQLite from 'expo-sqlite';
 const db = SQLite.openDatabase('test7.db');
 
 export default function StatisticsScreen({ navigation }) {
-    const userId = 'martin3@gmail.com'; //TO DO REMOVE THIS! THIS IS TEMP!
+    const userId = 'martin@gmail.com'; //TO DO REMOVE THIS! THIS IS TEMP!
     const [user, setUser] = useState(null);
     const [name, setName] = useState('');
     const [imageSource, setImageSource] = useState();
