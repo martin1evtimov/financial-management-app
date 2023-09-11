@@ -10,8 +10,8 @@ import * as SQLite from 'expo-sqlite';
 
 const db = SQLite.openDatabase('test7.db');
 
-export default function StatisticsScreen({ navigation }) {
-    const userId = 'martin@gmail.com'; //TO DO REMOVE THIS! THIS IS TEMP!
+export default function StatisticsScreen({ navigation, route }) {
+    const userId = route.params.user.email;
     const [user, setUser] = useState(null);
     const [name, setName] = useState('');
     const [imageSource, setImageSource] = useState();
@@ -166,7 +166,7 @@ export default function StatisticsScreen({ navigation }) {
         <TouchableOpacity style={styles.button} onPress={handlePasswordChange}>
           <Text style={styles.buttonText}>Change Password</Text>
         </TouchableOpacity>
-        <BottomMenu navigation={navigation} />
+        <BottomMenu user={user} navigation={navigation} />
       </Background>
     )
 }

@@ -6,7 +6,7 @@ import * as SQLite from 'expo-sqlite';
 const db = SQLite.openDatabase('test7.db');
 
 export default function Overview(props) {
-  const userId = 'martin@gmail.com'; //TO DO REMOVE THIS! THIS IS TEMP!
+  const user = props.user;
   const currentDate = new Date();
   const currentDayOfWeek = currentDate.getDay();
   const daysToMonday = currentDayOfWeek === 0 ? 6 : currentDayOfWeek - 1;
@@ -47,7 +47,7 @@ export default function Overview(props) {
     db.transaction((tx) => {
     tx.executeSql(
       'SELECT * FROM transactions WHERE user_email = ? AND date BETWEEN ? AND ?;',
-      [userId, startDate.toISOString(), endDate.toISOString()],
+      [user.email, startDate.toISOString(), endDate.toISOString()],
       (_, { rows }) => {
         const currentWeekTransactions = rows._array;
 
@@ -106,9 +106,9 @@ export default function Overview(props) {
   }, []);
 
   return (
-    <View style={{ flex: 0.8, width: '100%', flexDirection: 'column'}}>
+    <View style={styles.overviewMain}>
       <View>
-        <Text style={{fontSize: 18}}>Weekly Spending</Text>
+        <Text style={styles.weeklySpendingText}>Weekly Spending</Text>
         <BarChart
               width={Dimensions.get('window').width/1.5}
               barWidth={20}
@@ -121,8 +121,8 @@ export default function Overview(props) {
           />
       </View>
 
-      <View style={{marginTop: '10%'}}>
-        <Text style={{fontSize: 18, marginBottom: '5%'}}>Monthly Spending</Text>
+      <View style={styles.monthlySpendingMain}>
+        <Text style={styles.monthlySpendingText}>Monthly Spending</Text>
         <BarChart 
               width={Dimensions.get('window').width/2}
               rotateLabel
@@ -136,3 +136,21 @@ export default function Overview(props) {
     </View>
   )
 }
+
+const styles = StyleSheet.create({
+  overviewMain: { 
+    flex: 0.8,
+    width: '100%', 
+    flexDirection: 'column'
+  },
+  weeklySpendingText: {
+    fontSize: 18
+  },
+  monthlySpendingMain: {
+    marginTop: '10%'
+  },
+  monthlySpendingText: {
+    fontSize: 18, 
+    marginBottom: '5%'
+  }
+});

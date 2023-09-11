@@ -117,7 +117,7 @@ export default function RegisterScreen({ navigation }) {
       <Button
         mode="contained"
         onPress={onSignUpPressed}
-        style={{ marginTop: 24 }}
+        style={styles.signUpButton}
       >
         Sign Up
       </Button>
@@ -140,4 +140,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: theme.colors.primary,
   },
+  signUpButton: {
+    marginTop: 24
+  }
 })

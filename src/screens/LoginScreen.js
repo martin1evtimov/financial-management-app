@@ -20,9 +20,9 @@ export default function LoginScreen({ navigation }) {
   const [userFound, setUserFound] = useState(true); // State variable to track if the user is found
 
   const onLoginPressed = () => {
-    setUserFound(true)
-    const emailError = emailValidator(email.value)
-    const passwordError = passwordValidator(password.value)
+    setUserFound(true);
+    const emailError = emailValidator(email.value);
+    const passwordError = passwordValidator(password.value);
     //const accountError = 
     if (emailError || passwordError) {
       setEmail({ ...email, error: emailError })
@@ -69,7 +69,7 @@ export default function LoginScreen({ navigation }) {
       <BackButton goBack={navigation.goBack} />
       <Logo />
       {userFound ?  null : (
-        <Text style={{color: 'red'}}>User not found. Please check your credentials.</Text>
+        <Text style={styles.errorMessage}>User not found. Please check your credentials.</Text>
       )}
       <TextInput
         label="Email"
@@ -113,6 +113,9 @@ export default function LoginScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
+  errorMessage: {
+    color: 'red'
+  },
   forgotPassword: {
     width: '100%',
     alignItems: 'flex-end',

@@ -9,7 +9,7 @@ const db = SQLite.openDatabase('test7.db');
 
 
 export default function Budget(props) {
-    const userId = 'martin@gmail.com'; //TO DO REMOVE THIS! THIS IS TEMP!
+    const user = props.user;
     const [components, setComponents] = useState([]);
 
 
@@ -33,7 +33,7 @@ export default function Budget(props) {
     useEffect(() => {
         //Getting budget if there are any for this a user
         db.transaction(tx => {
-            tx.executeSql('SELECT * FROM budgets where user_email = ?;', [userId], (_, { rows }) => {
+            tx.executeSql('SELECT * FROM budgets where user_email = ?;', [user.email], (_, { rows }) => {
               // Store the query result in state
               rows._array.map((budget) =>  {
                 console.log(JSON.stringify(budget))
@@ -156,24 +156,24 @@ export default function Budget(props) {
     return (
         <View style={styles.main}>
             <View style={styles.addPanel}>
-                <View style={{justifyContent: 'center'}}>
-                    <Text style={{fontWeight: 'bold', fontSize: 14}}>Create a budget</Text>
-                    <Text style={{fontSize: 12}}>Save more by setting a budget</Text>
+                <View style={styles.panelTextSection}>
+                    <Text style={styles.textTitle}>Create a budget</Text>
+                    <Text style={styles.supportingText}>Save more by setting a budget</Text>
                 </View>
                 <TouchableOpacity onPress={handleCategoryPrompt} style={styles.button}>
                     <Text style={styles.plusSign}>+</Text>
                 </TouchableOpacity>
             </View> 
-            <ScrollView style={{width: '100%', marginTop: '10%'}}>
-                <Text style={{fontSize: 16}}>My Budgets</Text>
+            <ScrollView style={styles.activeBudgetsMain}>
+                <Text style={styles.budgetTitle}>My Budgets</Text>
                 {components.map((component) => (
                     <TouchableOpacity
                         key={component.key}
                         onPress={() => updateComponentBalance(component.key)}
                     >
                         <View style={styles.dynamicComponent}>
-                            <View style={{ flexDirection: 'row' }}>
-                                <View style={{marginRight: 5}}>
+                            <View style={styles.dynamicComponentMain}>
+                                <View style={styles.icon}>
                                     {iconArray[component.category]}
                                 </View>
                                 <View>
@@ -208,6 +208,16 @@ const styles = StyleSheet.create({
         width: '100%', 
         marginTop: '5%',
     },
+    panelTextSection: {
+        justifyContent: 'center'
+    },
+    textTitle: {
+        fontWeight: 'bold', 
+        fontSize: 14
+    },
+    supportingText: {
+        fontSize: 12
+    },
     button: {
         width: 50,
         height: 50,
@@ -220,11 +230,29 @@ const styles = StyleSheet.create({
         fontSize: 24,
         color: 'white',
     },
+    activeBudgetsMain: {
+        width: '100%',
+        marginTop: '10%'
+    },
+    budgetTitle: {
+        fontSize: 16
+    },
+    activeBudgetsPanel: {
+        flex: 1, 
+        width: '100%', 
+        alignItems: 'center'
+    },
     dynamicComponent: {
         padding: 10,
         marginVertical: 5,
         width: '100%',
         flexDirection: 'row',
         justifyContent: 'space-between'
-      },
+    },
+    dynamicComponentMain: {
+        flexDirection: 'row' 
+    },
+    icon: {
+        marginRight: 5
+    }
 });

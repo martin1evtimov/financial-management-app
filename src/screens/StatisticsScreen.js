@@ -8,8 +8,10 @@ import Goals from '../components/Goals'
 import Transactions from '../components/Transactions'
 import { theme } from '../core/theme'
 
-export default function StatisticsScreen({ navigation }) {
+export default function StatisticsScreen({ route, navigation }) {
   const [activeTab, setActiveTab] = useState("Overview");
+  const user = route.params.user;
+  const userId = user.email;
 
   const renderTab = (tabName) => (
     <TouchableOpacity
@@ -46,13 +48,13 @@ export default function StatisticsScreen({ navigation }) {
           </View>
           <View style={styles.contentContainer}>
             {/* Content for the active tab goes here */}
-            {activeTab === "Overview" && <Overview/>}
-            {activeTab === "Budget" && <Budget/>}
-            {activeTab === "Goals" && <Goals/>}
-            {activeTab === "Transactions" && <Transactions/>}
+            {activeTab === "Overview" && <Overview user={user} />}
+            {activeTab === "Budget" && <Budget user={user} />}
+            {activeTab === "Goals" && <Goals user={user} />}
+            {activeTab === "Transactions" && <Transactions user={user} />}
           </View>
 
-        <BottomMenu navigation={navigation} />
+        <BottomMenu user={user} navigation={navigation} />
     </Background>
   )
 }

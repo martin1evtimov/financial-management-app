@@ -9,14 +9,14 @@ const db = SQLite.openDatabase('test7.db');
 
 
 export default function Goals(props) {
-    const userId = 'martin@gmail.com'; //TO DO REMOVE THIS! THIS IS TEMP!
+    const user = props.user;
     const [components, setComponents] = useState([]);
 
     //use the useEffect hook to load budget data once when the component is mounted
     useEffect(() => {
         //Getting budget if there are any for this a user
         db.transaction(tx => {
-            tx.executeSql('SELECT * FROM goals where user_email = ?;', [userId], (_, { rows }) => {
+            tx.executeSql('SELECT * FROM goals where user_email = ?;', [user.email], (_, { rows }) => {
               // Store the query result in state
               rows._array.map((goal) =>  {
                 console.log(JSON.stringify(goal))
@@ -134,36 +134,36 @@ export default function Goals(props) {
     return (
         <View style={styles.main}>
             <View style={styles.addPanel}>
-                <View style={{justifyContent: 'center'}}>
-                    <Text style={{fontWeight: 'bold', fontSize: 14}}>Set a new goal</Text>
-                    <Text style={{fontSize: 12}}>Reach more goals</Text>
+                <View style={styles.panelTextSection}>
+                    <Text style={styles.textTitle}>Set a new goal</Text>
+                    <Text style={styles.supportingText}>Reach more goals</Text>
                 </View>
                 <TouchableOpacity onPress={handleGoalTitlePrompt} style={styles.button}>
                     <Text style={styles.plusSign}>+</Text>
                 </TouchableOpacity>
             </View> 
-            <ScrollView style={{width: '100%', marginTop: '10%'}}>
-                <Text style={{fontSize: 16}}>Active goals</Text>
-                <View style={{flex: 1, width: '100%', alignItems: 'center'}}> 
+            <ScrollView style={styles.activeGoalsMain}>
+                <Text style={styles.goalsTitle}>Active goals</Text>
+                <View style={styles.activeGoalsPanel}> 
                     {components.map((component) => (
-                            <TouchableOpacity
-                                key={component.key}
-                                onPress={() => updateComponentBalance(component.key)}
-                                style={{justifyContent: 'center'}}
-                            >
-                                <View style={styles.dynamicComponent}>
-                                    <View style={{ flexDirection: 'column' }}>
-                                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                            <Text>{component.title}</Text>
-                                            <Text>{(component.currentBalance / component.goal) * 100}%</Text>
-                                        </View>
-                                        <View style={{marginTop: 5}}>
-                                            <Text>${component.currentBalance}/${component.goal}</Text>
-                                            <ProgressBar progress={component.currentBalance / component.goal} size={20} />
-                                        </View>
+                        <TouchableOpacity
+                            key={component.key}
+                            onPress={() => updateComponentBalance(component.key)}
+                            style={styles.goal}
+                        >
+                            <View style={styles.dynamicComponent}>
+                                <View style={styles.dynamicComponentMain}>
+                                    <View style={styles.dynamicComponentTextSection}>
+                                        <Text>{component.title}</Text>
+                                        <Text>{(component.currentBalance / component.goal) * 100}%</Text>
+                                    </View>
+                                    <View style={styles.dynamicComponentProgessBar}>
+                                        <Text>${component.currentBalance}/${component.goal}</Text>
+                                        <ProgressBar progress={component.currentBalance / component.goal} size={20} />
                                     </View>
                                 </View>
-                            </TouchableOpacity>
+                            </View>
+                        </TouchableOpacity>
                     ))}
                 </View>
             </ScrollView>  
@@ -187,6 +187,16 @@ const styles = StyleSheet.create({
         width: '100%', 
         marginTop: '5%',
     },
+    panelTextSection: {
+        justifyContent: 'center'
+    },
+    textTitle: {
+        fontWeight: 'bold', 
+        fontSize: 14
+    },
+    supportingText: {
+        fontSize: 12
+    },
     button: {
         width: 50,
         height: 50,
@@ -199,11 +209,36 @@ const styles = StyleSheet.create({
         fontSize: 24,
         color: 'white',
     },
+    activeGoalsMain: {
+        width: '100%',
+        marginTop: '10%'
+    },
+    goalTitle: {
+        fontSize: 16
+    },
+    activeGoalsPanel: {
+        flex: 1, 
+        width: '100%', 
+        alignItems: 'center'
+    },
+    goal: {
+        justifyContent: 'center'
+    },
     dynamicComponent: {
         padding: 10,
         marginVertical: 5,
         width: '100%',
         flexDirection: 'row',
         justifyContent: 'space-between'
-      },
+    },
+    dynamicComponentMain: {
+        flexDirection: 'column' 
+    },
+    dynamicComponentTextSection: {
+        flexDirection: 'row', 
+        justifyContent: 'space-between' 
+    },
+    dynamicComponentProgessBar: {
+        marginTop: 5
+    }
 });

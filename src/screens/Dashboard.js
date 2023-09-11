@@ -10,7 +10,6 @@ const db = SQLite.openDatabase('test7.db');
 
 export default function Dashboard({ route, navigation }) {
   const user = route.params;
-
   const [balance, setBalance] = useState(user.balance);
   const [income, setIncome] = useState(user.income);
   const [expense, setExpense] = useState(user.expenses);
@@ -212,7 +211,7 @@ export default function Dashboard({ route, navigation }) {
           </View>
         </View>
       </View>
-      <BottomMenu navigation={navigation}/>
+      <BottomMenu user={user} navigation={navigation}/>
     </Background>
   )
 }
