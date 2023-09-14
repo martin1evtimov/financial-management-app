@@ -156,7 +156,7 @@ export default function Goals(props) {
                                 <View style={styles.dynamicComponentMain}>
                                     <View style={styles.dynamicComponentTextSection}>
                                         <Text>{component.title}</Text>
-                                        <Text>{(component.currentBalance / component.goal) * 100}%</Text>
+                                        <Text>{((component.currentBalance / component.goal) * 100).toFixed(2)}%</Text>
                                     </View>
                                     <View style={styles.dynamicComponentProgessBar}>
                                         <Text>${component.currentBalance}/${component.goal}</Text>
