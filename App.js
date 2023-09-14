@@ -83,13 +83,6 @@ export default function App() {
     );
   });
 
-  // db.transaction(tx => {
-  //   tx.executeSql('PRAGMA table_info("users");', [], (_, { rows }) => {
-  //     // Store the query result in state
-  //     console.log(rows); 
-  //   });
-  // });
-
   return (
     <Provider theme={theme}>
       <NavigationContainer>

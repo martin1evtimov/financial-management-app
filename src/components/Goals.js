@@ -10,6 +10,7 @@ const db = SQLite.openDatabase('test7.db');
 
 export default function Goals(props) {
     const user = props.user;
+    const userId = user.email;
     const [components, setComponents] = useState([]);
 
     //use the useEffect hook to load budget data once when the component is mounted
