@@ -10,7 +10,7 @@ const db = SQLite.openDatabase('test7.db');
 
 export default function Budget(props) {
     const user = props.user;
-    const userId = user.eemail;
+    const userId = user.email;
     const [components, setComponents] = useState([]);
 
 
